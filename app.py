@@ -1,163 +1,86 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-from ta.volatility import BollingerBands
-from ta.trend import MACD, EMAIndicator, SMAIndicator
-from ta.momentum import RSIIndicator
 import datetime
 from datetime import date
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.neighbors import KNeighborsRegressor
-from xgboost import XGBRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.ensemble import ExtraTreesRegressor
-from sklearn.metrics import r2_score, mean_absolute_error
+import altair as alt
+
+header = st.container()
+user_list = st.container()
+portfolio_chart = st.container()
+
+with header:
+    st.title('Portfolio Value Chart')
+    st.text_area('Enter the stock (ticker symbols) and number of shares in the section below to generate a chart of portfolio value as a function of stock value over time.')
+
+with user_list:
+    st.header('Use the input form to add stocks to your portfolio.')
+    
+
+with portfolio_chart:
+    st.write('Chart below...')
 
 
 
-st.title('Stock Price Predictions')
-st.sidebar.info('Welcome to the Stock Price Prediction App. Choose your options below')
-st.sidebar.info("Created and designed by [Jonaben](https://www.linkedin.com/in/jonathan-ben-okah-7b507725b)")
+
+
+
+
+
+
+
+
+
+
+st.title('Stock Portfolio Visualizer')
+st.sidebar.info('Welcome to the Stock Portfolio Visualizer App. Update your portfolio using the options below.')
 
 def main():
-    option = st.sidebar.selectbox('Make a choice', ['Visualize','Recent Data', 'Predict'])
-    if option == 'Visualize':
-        tech_indicators()
-    elif option == 'Recent Data':
-        dataframe()
-    else:
-        predict()
-
-
+    single_ticker_chart()
 
 @st.cache_resource
-def download_data(op, start_date, end_date):
-    df = yf.download(op, start=start_date, end=end_date, progress=False)
+def download_data(option, start_date, end_date):
+    df = yf.download(option, start=start_date, end=end_date, progress=False)
     return df
 
 
 
-option = st.sidebar.text_input('Enter a Stock Symbol', value='SPY')
+def add_stock_ticker(stocks, ticker):
+    st.sidebar.write("Start")
+    st.sidebar.write(stocks)
+    st.sidebar.write(ticker)
+    st.sidebar.write("End")
+    stocks.append(ticker)  # Add the ticker to the list
+    st.sidebar.write('Stocks in List')
+    st.sidebar.write(stocks)
+    return stocks
+
+
+#sideboard
+stocks = []
+st.sidebar.write('Stocks in List')
+st.sidebar.write(stocks)
+ticker = st.sidebar.text_input('Enter a Stock Symbol to Add', value='TSLA')
+if st.sidebar.button('Add Ticker'):
+    stocks = add_stock_ticker(stocks, ticker)
+
+option = st.sidebar.text_input('Enter a Stock Symbol', value='TSLA')
 option = option.upper()
 today = datetime.date.today()
-duration = st.sidebar.number_input('Enter the duration', value=3000)
-before = today - datetime.timedelta(days=duration)
-start_date = st.sidebar.date_input('Start Date', value=before)
-end_date = st.sidebar.date_input('End date', today)
-if st.sidebar.button('Send'):
-    if start_date < end_date:
-        st.sidebar.success('Start date: `%s`\n\nEnd date: `%s`' %(start_date, end_date))
-        download_data(option, start_date, end_date)
-    else:
-        st.sidebar.error('Error: End date must fall after start date')
-
-
-
-
+duration = st.sidebar.number_input('Days to chart', value=90)
+end_date = today
+start_date = today - datetime.timedelta(days=duration)
 data = download_data(option, start_date, end_date)
-scaler = StandardScaler()
 
-def tech_indicators():
-    st.header('Technical Indicators')
-    option = st.radio('Choose a Technical Indicator to Visualize', ['Close', 'BB', 'MACD', 'RSI', 'SMA', 'EMA'])
-
-    # Bollinger bands
-    bb_indicator = BollingerBands(data.Close)
-    bb = data
-    bb['bb_h'] = bb_indicator.bollinger_hband()
-    bb['bb_l'] = bb_indicator.bollinger_lband()
-    # Creating a new dataframe
-    bb = bb[['Close', 'bb_h', 'bb_l']]
-    # MACD
-    macd = MACD(data.Close).macd()
-    # RSI
-    rsi = RSIIndicator(data.Close).rsi()
-    # SMA
-    sma = SMAIndicator(data.Close, window=14).sma_indicator()
-    # EMA
-    ema = EMAIndicator(data.Close).ema_indicator()
-
-    if option == 'Close':
-        st.write('Close Price')
-        st.line_chart(data.Close)
-    elif option == 'BB':
-        st.write('BollingerBands')
-        st.line_chart(bb)
-    elif option == 'MACD':
-        st.write('Moving Average Convergence Divergence')
-        st.line_chart(macd)
-    elif option == 'RSI':
-        st.write('Relative Strength Indicator')
-        st.line_chart(rsi)
-    elif option == 'SMA':
-        st.write('Simple Moving Average')
-        st.line_chart(sma)
-    else:
-        st.write('Expoenetial Moving Average')
-        st.line_chart(ema)
-
-
-def dataframe():
-    st.header('Recent Data')
-    st.dataframe(data.tail(10))
-
-
-
-def predict():
-    model = st.radio('Choose a model', ['LinearRegression', 'RandomForestRegressor', 'ExtraTreesRegressor', 'KNeighborsRegressor', 'XGBoostRegressor'])
-    num = st.number_input('How many days forecast?', value=5)
-    num = int(num)
-    if st.button('Predict'):
-        if model == 'LinearRegression':
-            engine = LinearRegression()
-            model_engine(engine, num)
-        elif model == 'RandomForestRegressor':
-            engine = RandomForestRegressor()
-            model_engine(engine, num)
-        elif model == 'ExtraTreesRegressor':
-            engine = ExtraTreesRegressor()
-            model_engine(engine, num)
-        elif model == 'KNeighborsRegressor':
-            engine = KNeighborsRegressor()
-            model_engine(engine, num)
-        else:
-            engine = XGBRegressor()
-            model_engine(engine, num)
-
-
-def model_engine(model, num):
-    # getting only the closing price
-    df = data[['Close']]
-    # shifting the closing price based on number of days forecast
-    df['preds'] = data.Close.shift(-num)
-    # scaling the data
-    x = df.drop(['preds'], axis=1).values
-    x = scaler.fit_transform(x)
-    # storing the last num_days data
-    x_forecast = x[-num:]
-    # selecting the required values for training
-    x = x[:-num]
-    # getting the preds column
-    y = df.preds.values
-    # selecting the required values for training
-    y = y[:-num]
-
-    #spliting the data
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=.2, random_state=7)
-    # training the model
-    model.fit(x_train, y_train)
-    preds = model.predict(x_test)
-    st.text(f'r2_score: {r2_score(y_test, preds)} \
-            \nMAE: {mean_absolute_error(y_test, preds)}')
-    # predicting stock price based on the number of days
-    forecast_pred = model.predict(x_forecast)
-    day = 1
-    for i in forecast_pred:
-        st.text(f'Day {day}: {i}')
-        day += 1
-
+def single_ticker_chart():
+    st.header('Single Ticker Chart')
+    st.write(option)
+    st.line_chart(data.Close)   
+    alt.Chart(options).mark_bar().encode(
+        x='Date',
+        y='sum(close)',
+        color='site'
+    )
 
 if __name__ == '__main__':
     main()

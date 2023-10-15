@@ -1,1 +1,1 @@
-Stock price prediction created using Streamlit.
+Stock portfolio visualization created using Streamlit.
