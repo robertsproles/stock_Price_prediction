@@ -9,16 +9,30 @@ header = st.container()
 user_list = st.container()
 portfolio_chart = st.container()
 
+
 with header:
     st.title('Portfolio Value Chart')
-    st.text_area('Enter the stock (ticker symbols) and number of shares in the section below to generate a chart of portfolio value as a function of stock value over time.')
+    st.write('Enter the stock (ticker symbols) and number of shares in the section below to generate a chart of portfolio value as a function of stock value over time.')
 
 with user_list:
     st.header('Use the input form to add stocks to your portfolio.')
+    df = pd.DataFrame(
+        [
+            {"Ticker": "TSLA", "Number of Shares": 1.000, "Price": 1.00}
+        ]
+    )
+    edited_df = st.data_editor(df, num_rows="dynamic")
     
-
 with portfolio_chart:
-    st.write('Chart below...')
+    st.write("Here you go...")
+    for i in range(0, len(edited_df)):
+        stock = yf.Ticker(edited_df.loc[i].at["Ticker"])
+        st.write(stock.info['currentPrice'])
+        st.write(edited_df.loc[i].at["Price"])
+        edited_df.loc[i].at["Price"] = stock.info['currentPrice']
+
+    st.write("After YF...")
+    st.write(edited_df)
 
 
 
@@ -75,6 +89,7 @@ data = download_data(option, start_date, end_date)
 def single_ticker_chart():
     st.header('Single Ticker Chart')
     st.write(option)
+    st.write(data.Close[-1])
     st.line_chart(data.Close)   
     alt.Chart(options).mark_bar().encode(
         x='Date',
