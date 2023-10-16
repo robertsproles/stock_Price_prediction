@@ -4,7 +4,6 @@ import yfinance as yf
 import datetime
 from datetime import date
 import altair as alt
-import plotly.express as px
 
 
 header = st.container()
@@ -40,6 +39,5 @@ with header:
     
 with portfolio_chart:
     st.header('Performance Chart')
-    st.write(chart_data)
+#    st.write(chart_data)
     st.line_chart(chart_data, y=["Low", "Close", "High"])
-    st.plotly_chart(px.pie(df, values="Value", names="Ticker", title='Portfolio Balance'))
