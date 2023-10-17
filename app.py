@@ -5,7 +5,6 @@ import datetime
 from datetime import date
 import altair as alt
 
-
 header = st.container()
 user_sidebar = st.sidebar.container()
 portfolio_chart = st.container()
@@ -24,7 +23,7 @@ with user_sidebar:
         st.write('')
     st.write('')
     today = datetime.date.today()
-    days_to_plot = st.sidebar.number_input('Days to chart', value=90)
+    days_to_plot = st.slider('Days to chart', 1,1000,90)
     end_date = today
     start_date = today - datetime.timedelta(days=days_to_plot)
     
