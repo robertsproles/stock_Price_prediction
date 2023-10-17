@@ -4,12 +4,16 @@ import yfinance as yf
 import datetime
 from datetime import date
 import altair as alt
+import matplotlib.pyplot as plt
 
 
 header = st.container()
 user_sidebar = st.sidebar.container()
 portfolio_chart = st.container()
 df = pd.read_csv("portfolio.csv")
+
+def build_historic_prices(Ticker,NumShares):
+    st.write('')
 
 with user_sidebar:
     st.header('Use the form to add stocks to your portfolio.')
@@ -27,17 +31,19 @@ with user_sidebar:
     
 for i in range(0, len(df)):
     stock = yf.Ticker(df.loc[i,"Ticker"])
-    df.loc[i,"Price"] = stock.info['currentPrice']
-    df.loc[i,"Value"] = df.loc[i,"Number of Shares"] * df.loc[i,"Price"]
+#    stock.info
+    df.loc[i,"Price"] = stock.info['previousClose']
+    df.loc[i,"Value"] = df.loc[i,"NumShares"] * df.loc[i,"Price"]
     df.to_csv('portfolio.csv', index=False)
-    chart_data = yf.download(df.loc[i,"Ticker"], start_date, end_date)
 
 with header:
     st.title('Portfolio Value Chart')
     st.write('Enter the stock (ticker symbols) and number of shares in the sidebar to update the portfolio.')
-    st.write(df[['Ticker','Number of Shares']])
+#    st.write(df[['Ticker','NumShares']])
     
 with portfolio_chart:
     st.header('Performance Chart')
 #    st.write(chart_data)
-    st.line_chart(chart_data, y=["Low", "Close", "High"])
+    for s in range(0, len(df)):
+        chart_data = yf.download(df.loc[s,"Ticker"], start_date, end_date)
+        st.line_chart(chart_data, y=["Close"])
